@@ -251,7 +251,32 @@ a.item:active,button.item:active{background:var(--bg-2)}
 
 /* Themen */
 .sec{padding:22px;scroll-margin-top:calc(var(--bar-h) + 20px)}
-.sec-head{display:flex;gap:14px;align-items:flex-start}
+.sec-h{margin:-22px;font-size:inherit;font-weight:inherit}
+.sec-head{display:flex;gap:14px;align-items:flex-start;width:100%;text-align:left;padding:22px;border-radius:var(--r-l)}
+.sec-head:hover .fold-ico{background:var(--hair)}
+.fold-ico,.fold-btn{flex:none;color:var(--ink-3)}
+.fold-ico{width:32px;height:32px;margin:-2px -6px 0 0;border-radius:50%;display:grid;place-items:center;transition:background .18s}
+.fold-ico svg,.fold-btn svg{transition:transform .38s var(--ease)}
+.sec:not(.folded) .fold-ico svg,.chap:not(.folded) .fold-btn svg{transform:rotate(180deg)}
+.sub-ok{color:var(--good);display:none;margin-top:5px;flex:none}
+.sec.is-read .sub-ok,.subitem .sub-ok{display:block}
+.fold{display:grid;grid-template-rows:1fr;transition:grid-template-rows .38s var(--ease)}
+.fold-in{overflow:hidden;min-height:0;transition:visibility 0s,opacity .3s}
+.folded>.fold{grid-template-rows:0fr}
+.folded>.fold>.fold-in{visibility:hidden;opacity:0;transition:visibility 0s .38s,opacity .25s}
+.sec .points{margin-top:20px}
+.chap{position:relative}
+.chap+.chap>.item::before{content:"";position:absolute;left:20px;right:0;top:0;border-top:1px solid var(--hair)}
+.chap-link{display:flex;align-items:flex-start;gap:14px;flex:1;min-width:0}
+.chap-link:hover .h3{color:var(--euc-deep)}
+.chap .fold-btn{margin:-2px -8px 0 0}
+.sublist{padding:0 12px 12px 72px;display:flex;flex-direction:column;gap:2px}
+.subitem{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:9px 10px;border-radius:12px;font-size:15px;font-weight:550;color:var(--ink);transition:background .18s}
+.subitem:hover{background:var(--surface-2)}
+.subitem .sec-nr{margin:0;min-width:54px;text-align:center}
+.subitem .sub-ok{margin:0}
+.subitem .chev{color:var(--ink-3);opacity:.7}
+@media (max-width:719px){.sublist{padding-left:12px}}
 .sec-nr{font-size:13px;font-weight:700;color:var(--euc-deep);background:var(--accent-soft);padding:4px 9px;border-radius:9px;white-space:nowrap;margin-top:1px}
 .points{display:flex;flex-direction:column;gap:11px;margin-top:16px}
 .points li{position:relative;padding-left:20px;line-height:1.55;max-width:72ch}

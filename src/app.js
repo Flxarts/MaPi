@@ -28,6 +28,7 @@ const I = {
   plus: '<path d="M12 5.500v13M5.500 12h13"/>',
   x: '<path d="m6.500 6.500 11 11M17.500 6.500l-11 11"/>',
   chev: '<path d="m9.500 6 6 6-6 6"/>',
+  drop: '<path d="m6 9.500 6 6 6-6"/>',
   back: '<path d="m14.500 6-6 6 6 6"/>',
   star: '<path d="m12 4 2.400 5 5.400.7-4 3.800 1 5.400L12 16.300 7.200 18.900l1-5.400-4-3.800 5.400-.7z"/>',
   search: '<circle cx="11" cy="11" r="6.500"/><path d="m16 16 4 4"/>',
@@ -107,7 +108,7 @@ function enter(animated) {
 
 /* ───────── Zustand ───────── */
 const NEW_PER_ROUND = 15;
-const fresh = () => ({ cards: {}, quiz: {}, own: [], read: {}, fav: {}, days: {}, exam: null, theme: 'auto', shuffle: false, size: 20, qcfg: { scope: [], n: 10, focus: 'all' } });
+const fresh = () => ({ cards: {}, quiz: {}, own: [], read: {}, fav: {}, days: {}, fold: {}, open: {}, exam: null, theme: 'auto', shuffle: false, size: 20, qcfg: { scope: [], n: 10, focus: 'all' } });
 let KAP = {}, CARD = {}, QUIZ = {};
 
 function loadState() {
@@ -119,7 +120,7 @@ function adopt(s) {
   const f = fresh();
   S = Object.assign(f, s);
   S.qcfg = Object.assign(fresh().qcfg, s.qcfg || {});
-  for (const k of ['cards', 'quiz', 'read', 'fav', 'days']) if (!S[k] || typeof S[k] !== 'object') S[k] = {};
+  for (const k of ['cards', 'quiz', 'read', 'fav', 'days', 'fold', 'open']) if (!S[k] || typeof S[k] !== 'object') S[k] = {};
   if (!Array.isArray(S.own)) S.own = [];
   if (!Array.isArray(S.qcfg.scope)) S.qcfg.scope = [];
   S.own = S.own.filter(o => o && typeof o.frage === 'string' && typeof o.antwort === 'string' && typeof o.id === 'string')
@@ -318,11 +319,15 @@ function viewTopics() {
     <div><h1 class="title">Themen</h1><p class="lede">Alle Kapitel der beiden Studienhefte, zusammengefasst auf das Wesentliche.</p></div>
     ${hefte().map(h => `<section class="stack gap-10"><div><p class="eyebrow">Studienheft ${h.nr} · ${esc(h.code)}</p><h2 class="h2">${esc(h.titel)}</h2></div>
       <div class="card list">${h.kapitel.map(k => {
-        const read = k.abschnitte.filter(a => S.read[k.id + ':' + a.nr]).length;
-        return `<a class="item" href="#themen/${k.id}" style="align-items:flex-start"><span class="badge num">${k.kapitel}</span><span class="grow stack gap-6">
-          <span class="h3">${esc(k.titel)}</span><span class="small muted clamp2">${esc(k.kurz)}</span>
-          <span class="row wrap" style="gap:6px;margin-top:2px"><span class="pill plain">${plural(k.abschnitte.length, 'Abschnitt', 'Abschnitte')}</span><span class="pill plain">${k.karten.length} Karten</span><span class="pill plain">${k.quiz.length} Fragen</span>${read ? `<span class="pill good">${read === k.abschnitte.length ? 'gelesen' : read + ' gelesen'}</span>` : ''}</span>
-        </span><span class="chev" style="margin-top:9px">${svg(I.chev, 18)}</span></a>`;
+        const read = k.abschnitte.filter(a => S.read[k.id + ':' + a.nr]).length, open = !!S.open[k.id];
+        return `<div class="chap${open ? '' : ' folded'}"><div class="item" style="align-items:flex-start">
+          <a class="chap-link" href="#themen/${k.id}"><span class="badge num">${k.kapitel}</span><span class="grow stack gap-6">
+            <span class="h3">${esc(k.titel)}</span><span class="small muted clamp2">${esc(k.kurz)}</span>
+            <span class="row wrap" style="gap:6px;margin-top:2px"><span class="pill plain">${plural(k.abschnitte.length, 'Abschnitt', 'Abschnitte')}</span><span class="pill plain">${k.karten.length} Karten</span><span class="pill plain">${k.quiz.length} Fragen</span>${read ? `<span class="pill good">${read === k.abschnitte.length ? 'gelesen' : read + ' gelesen'}</span>` : ''}</span>
+          </span></a>
+          <button class="icon-btn fold-btn" data-act="chap-toggle" data-kap="${k.id}" aria-expanded="${open}" aria-controls="sub-${k.id}" aria-label="Abschnitte von Kapitel ${k.kapitel} ein- oder ausklappen">${svg(I.drop, 20)}</button></div>
+          <div class="fold" id="sub-${k.id}"><div class="fold-in"><ul class="sublist">${k.abschnitte.map(a => `<li><button class="subitem" data-act="goto-sec" data-kap="${k.id}" data-nr="${esc(a.nr)}"><span class="sec-nr num">${esc(secLabel(a.nr))}</span><span class="grow">${esc(a.titel)}</span>${S.read[k.id + ':' + a.nr] ? `<span class="sub-ok">${svg(I.check, 16)}</span>` : ''}<span class="chev">${svg(I.chev, 16)}</span></button></li>`).join('')}</ul></div></div>
+        </div>`;
       }).join('')}</div></section>`).join('')}
   `);
 }
@@ -336,20 +341,38 @@ function viewChapter(id) {
       <div class="row wrap" style="gap:10px;margin-top:6px"><a class="btn primary" href="#lernen/${id}">${svg(I.cards, 19)} Karten lernen</a><button class="btn soft" data-act="quiz-kap" data-kap="${id}">${svg(I.quiz, 19)} Quiz starten</button></div>
     </div>
     <nav class="toc" aria-label="Abschnitte">${k.abschnitte.map(a => `<button class="chip" data-act="jump" data-nr="${esc(a.nr)}">${esc(secLabel(a.nr))}</button>`).join('')}</nav>
+    <div class="head-row"><span class="small muted">${plural(k.abschnitte.length, 'Abschnitt', 'Abschnitte')}</span><button class="btn small ghost" id="fold-all" data-act="fold-all" data-kap="${id}">${foldAllLabel(k)}</button></div>
     ${k.abschnitte.map(a => {
-      const on = S.read[id + ':' + a.nr], n = secCards[a.nr] || 0;
-      return `<section class="card sec" id="sec-${esc(a.nr)}">
-        <div class="sec-head"><span class="sec-nr num">${esc(secLabel(a.nr))}</span><h2 class="h2 grow">${esc(a.titel)}</h2></div>
-        <ul class="points">${a.punkte.map(p => `<li>${rich(p)}</li>`).join('')}</ul>
-        ${a.merke ? `<p class="merke">${svg(I.bulb, 19)}<span>${rich(a.merke)}</span></p>` : ''}
-        <div class="sec-foot"><button class="check${on ? ' on' : ''}" data-act="read" data-key="${esc(id + ':' + a.nr)}" aria-pressed="${on ? 'true' : 'false'}"><i>${svg(I.check, 14)}</i>${on ? 'Gelesen' : 'Als gelesen markieren'}</button>
-        ${n ? `<a class="btn small ghost" href="#lernen/${id}~${encodeURIComponent(a.nr)}">${n} Karten dazu ${svg(I.chev, 15)}</a>` : ''}</div>
+      const key = id + ':' + a.nr, on = S.read[key], n = secCards[a.nr] || 0, folded = !!S.fold[key];
+      return `<section class="card sec${folded ? ' folded' : ''}${on ? ' is-read' : ''}" id="sec-${esc(a.nr)}">
+        <h2 class="sec-h"><button class="sec-head" data-act="sec-toggle" data-key="${esc(key)}" aria-expanded="${!folded}" aria-controls="secb-${esc(a.nr)}"><span class="sec-nr num">${esc(secLabel(a.nr))}</span><span class="h2 grow">${esc(a.titel)}</span><span class="sub-ok" title="Gelesen">${svg(I.check, 17)}</span><span class="fold-ico">${svg(I.drop, 20)}</span></button></h2>
+        <div class="fold" id="secb-${esc(a.nr)}"><div class="fold-in">
+          <ul class="points">${a.punkte.map(p => `<li>${rich(p)}</li>`).join('')}</ul>
+          ${a.merke ? `<p class="merke">${svg(I.bulb, 19)}<span>${rich(a.merke)}</span></p>` : ''}
+          <div class="sec-foot"><button class="check${on ? ' on' : ''}" data-act="read" data-key="${esc(key)}" aria-pressed="${on ? 'true' : 'false'}"><i>${svg(I.check, 14)}</i>${on ? 'Gelesen' : 'Als gelesen markieren'}</button>
+          ${n ? `<a class="btn small ghost" href="#lernen/${id}~${encodeURIComponent(a.nr)}">${n} Karten dazu ${svg(I.chev, 15)}</a>` : ''}</div>
+        </div></div>
       </section>`;
     }).join('')}
     <div class="row wrap" style="gap:10px;justify-content:center;margin-top:6px"><a class="btn primary" href="#lernen/${id}">Karten zu diesem Kapitel</a><button class="btn soft" data-act="quiz-kap" data-kap="${id}">Quiz zu diesem Kapitel</button></div>
   `);
+  if (pendingJump) { const nr = pendingJump; pendingJump = null; setTimeout(() => jumpTo(nr, false), 40); }
 }
 const secLabel = nr => (nr === 'E' ? 'Einleitung' : nr === 'S' ? 'Schluss' : nr);
+const foldAllLabel = k => (k.abschnitte.every(a => S.fold[k.id + ':' + a.nr]) ? 'Alle aufklappen' : 'Alle zuklappen');
+let pendingJump = null;
+function setFold(sec, key, folded) {
+  if (folded) S.fold[key] = 1; else S.fold[key] = undefined;
+  sec.classList.toggle('folded', folded);
+  const b = $('.sec-head', sec); if (b) b.setAttribute('aria-expanded', String(!folded));
+}
+function jumpTo(nr, smooth) {
+  const t = document.getElementById('sec-' + nr); if (!t) return;
+  const b = $('.sec-head', t);
+  if (t.classList.contains('folded') && b) { setFold(t, b.dataset.key, false); save(); syncFoldAll(); }
+  t.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+}
+function syncFoldAll() { const b = $('#fold-all'); if (b && KAP[b.dataset.kap]) b.textContent = foldAllLabel(KAP[b.dataset.kap]); }
 
 /* ───────── Karten: Übersicht ───────── */
 const B = { q: '', f: 'all', limit: 30 };
@@ -375,12 +398,12 @@ function viewCards() {
       <div class="row wrap" style="gap:10px"><span class="small muted">Karten pro Runde</span><div class="seg" role="group" aria-label="Karten pro Runde">${[10, 20, 0].map(n => `<button data-act="size" data-n="${n}" class="${S.size === n ? 'on' : ''}">${n || 'Alle'}</button>`).join('')}</div></div>
       <label class="switch-row" for="opt-shuffle"><span>Mischen</span><input id="opt-shuffle" type="checkbox" class="switch" data-on="shuffle"${S.shuffle ? ' checked' : ''}></label>
     </div>
+    <section class="stack gap-10"><div><p class="eyebrow">Selbst erstellt</p><h2 class="h2">Eigene Karten</h2></div>
+      <div class="card list">${ownN ? deckRow('own', svg(I.pen, 18), plural(ownN, 'eigene Karte', 'eigene Karten')) : ''}
+        <button class="item" data-act="new-card"><span class="badge">${svg(I.plus, 19)}</span><span class="grow"><span class="h3">${ownN ? 'Weitere Karte anlegen' : 'Erste eigene Karte anlegen'}</span><span class="tiny faint" style="display:block;margin-top:2px">Halte fest, was du dir zusätzlich merken willst.</span></span><span class="chev">${svg(I.chev, 18)}</span></button></div>
+    </section>
     ${hefte().map(h => `<section class="stack gap-10"><div><p class="eyebrow">Studienheft ${h.nr}</p><h2 class="h2">${esc(h.titel)}</h2></div>
       <div class="card list">${h.kapitel.map(k => deckRow(k.id, k.kapitel, k.titel)).join('')}</div></section>`).join('')}
-    <section class="stack gap-10"><div><p class="eyebrow">Selbst erstellt</p><h2 class="h2">Eigene Karten</h2></div>
-      ${ownN ? `<div class="card list">${deckRow('own', svg(I.pen, 18), plural(ownN, 'eigene Karte', 'eigene Karten'))}</div>`
-        : `<div class="card empty"><span class="ico">${svg(I.pen, 24)}</span><p>Noch keine eigenen Karten. Halte fest, was du dir zusätzlich merken willst.</p><button class="btn soft" data-act="new-card">${svg(I.plus, 18)} Erste Karte anlegen</button></div>`}
-    </section>
     <section class="stack gap-14"><h2 class="h2">Alle Karten durchsuchen</h2>
       <label class="field" for="b-q" style="position:relative"><span class="sr">Karten durchsuchen</span><span style="position:absolute;left:14px;top:13px;color:var(--ink-3)">${svg(I.search, 20)}</span><input id="b-q" type="search" placeholder="Begriff suchen" value="${esc(B.q)}" data-on="search" style="padding-left:44px" autocomplete="off"></label>
       <div class="chips" id="b-f"></div>
@@ -743,8 +766,21 @@ const ACT = {
     $$(`[data-act="fav"][data-id="${CSS.escape(id)}"]`).forEach(b => { b.classList.toggle('on', !!S.fav[id]); b.setAttribute('aria-pressed', S.fav[id] ? 'true' : 'false'); $('svg', b).setAttribute('fill', S.fav[id] ? 'currentColor' : 'none'); });
     if ($('#b-list') && !sheetEl) renderBrowser();
   },
-  read: el => { const k = el.dataset.key; if (S.read[k]) delete S.read[k]; else S.read[k] = 1; save(); const on = !!S.read[k]; el.classList.toggle('on', on); el.setAttribute('aria-pressed', on ? 'true' : 'false'); el.lastChild.textContent = on ? 'Gelesen' : 'Als gelesen markieren'; },
-  jump: el => { const t = document.getElementById('sec-' + el.dataset.nr); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
+  read: el => { const k = el.dataset.key; if (S.read[k]) delete S.read[k]; else S.read[k] = 1; save(); const on = !!S.read[k]; el.classList.toggle('on', on); const sc = el.closest('.sec'); if (sc) sc.classList.toggle('is-read', on); el.setAttribute('aria-pressed', on ? 'true' : 'false'); el.lastChild.textContent = on ? 'Gelesen' : 'Als gelesen markieren'; },
+  jump: el => jumpTo(el.dataset.nr, true),
+  'sec-toggle': el => { const sec = el.closest('.sec'); setFold(sec, el.dataset.key, !sec.classList.contains('folded')); save(); syncFoldAll(); },
+  'fold-all': el => {
+    const k = KAP[el.dataset.kap]; if (!k) return;
+    const close = !k.abschnitte.every(a => S.fold[k.id + ':' + a.nr]);
+    $$('.sec').forEach(sec => { const b = $('.sec-head', sec); if (b) setFold(sec, b.dataset.key, close); });
+    save(); syncFoldAll();
+  },
+  'chap-toggle': el => {
+    const id = el.dataset.kap, c = el.closest('.chap'), open = c.classList.contains('folded');
+    S.open[id] = open ? 1 : undefined;
+    c.classList.toggle('folded', !open); el.setAttribute('aria-expanded', String(open)); save();
+  },
+  'goto-sec': el => { pendingJump = el.dataset.nr; S.fold[el.dataset.kap + ':' + el.dataset.nr] = undefined; save(); go('themen/' + el.dataset.kap); },
   size: el => { S.size = +el.dataset.n; save(); ST = null; refresh(); },
   bfilter: el => { B.f = el.dataset.f; B.limit = 30; renderBrowser(); },
   bmore: () => { B.limit += 40; renderBrowser(); },
