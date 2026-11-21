@@ -382,7 +382,7 @@ function viewCards() {
         : `<div class="card empty"><span class="ico">${svg(I.pen, 24)}</span><p>Noch keine eigenen Karten. Halte fest, was du dir zusätzlich merken willst.</p><button class="btn soft" data-act="new-card">${svg(I.plus, 18)} Erste Karte anlegen</button></div>`}
     </section>
     <section class="stack gap-14"><h2 class="h2">Alle Karten durchsuchen</h2>
-      <label class="field" for="b-q" style="position:relative"><span class="sr">Karten durchsuchen</span><span style="position:absolute;left:14px;top:13px;color:var(--ink-3)">${svg(I.search, 20)}</span><input id="b-q" type="search" placeholder="Begriff suchen, z. B. Salutogenese" value="${esc(B.q)}" data-on="search" style="padding-left:44px" autocomplete="off"></label>
+      <label class="field" for="b-q" style="position:relative"><span class="sr">Karten durchsuchen</span><span style="position:absolute;left:14px;top:13px;color:var(--ink-3)">${svg(I.search, 20)}</span><input id="b-q" type="search" placeholder="Begriff suchen" value="${esc(B.q)}" data-on="search" style="padding-left:44px" autocomplete="off"></label>
       <div class="chips" id="b-f"></div>
       <div id="b-list"></div>
     </section>
