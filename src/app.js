@@ -216,7 +216,7 @@ function boot() {
   loadState(); indexData(); applyTheme();
   $('#app').innerHTML = `
     <header class="bar"><div class="bar-in">
-      <a class="brand" href="#start" aria-label="MaPi Startseite">${LOGO(30)}<span>MaPi</span></a>
+      <a class="brand" href="#start" aria-label="MaPH Startseite">${LOGO(30)}<span>MaPH</span></a>
       <button class="icon-btn" data-act="settings" aria-label="Einstellungen">${svg(I.gear)}</button>
     </div></header>
     <nav class="tabs" aria-label="Bereiche">${TABS.map(t => `<a class="tab" href="#${t.id}" data-tab="${t.id}">${svg(I[t.icon])}<span>${t.label}</span></a>`).join('')}</nav>
@@ -708,12 +708,12 @@ function settingsSheet() {
     </div>
     <p class="group-label">Zugang</p>
     <div class="group"><button class="item" data-act="logout">${svg(I.out, 20)}<span class="grow">Abmelden</span></button></div>
-    <p class="tiny faint" style="text-align:center;margin-top:20px;line-height:1.5">MaPi · Malin Public Health<br>${nC} Lernkarten und ${nQ} Quizfragen aus den Studienheften ${DATA.hefte.map(h => esc(h.code)).join(' und ')}.<br>Fortschritt und eigene Karten liegen nur in diesem Browser.</p>`);
+    <p class="tiny faint" style="text-align:center;margin-top:20px;line-height:1.5">MaPH · Malin Public Health<br>${nC} Lernkarten und ${nQ} Quizfragen aus den Studienheften ${DATA.hefte.map(h => esc(h.code)).join(' und ')}.<br>Fortschritt und eigene Karten liegen nur in diesem Browser.</p>`);
 }
 function exportData() {
-  const blob = new Blob([JSON.stringify({ app: 'MaPi', v: 1, date: new Date().toISOString(), state: S }, null, 1)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify({ app: 'MaPH', v: 1, date: new Date().toISOString(), state: S }, null, 1)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `mapi-sicherung-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `maph-sicherung-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   toast('Sicherung erstellt');
 }
@@ -722,10 +722,10 @@ function importData(file) {
   r.onload = () => {
     try {
       const j = JSON.parse(r.result);
-      if (!j || j.app !== 'MaPi' || !j.state || typeof j.state !== 'object') throw new Error('Format');
+      if (!j || j.app !== 'MaPH' || !j.state || typeof j.state !== 'object') throw new Error('Format');
       adopt(j.state); indexData(); applyTheme(); persist(); ST = null; QZ = null;
       closeSheet(); refresh(); toast('Sicherung eingespielt');
-    } catch { toast('Diese Datei ist keine MaPi-Sicherung'); }
+    } catch { toast('Diese Datei ist keine MaPH-Sicherung'); }
   };
   r.readAsText(file);
 }

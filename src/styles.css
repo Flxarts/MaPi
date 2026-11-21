@@ -1,4 +1,4 @@
-/* MaPi — ruhige, helle Lernoberfläche in Mint und Eukalyptus.
+/* MaPH — ruhige, helle Lernoberfläche in Mint und Eukalyptus.
    Layout: eine Spalte (max. 980px), Glas-Navigation oben (Desktop) bzw. Tab-Leiste unten (Mobil). */
 :root{
   --bg:#F2F7F4; --bg-2:#E7F0EB; --surface:#FFFFFF; --surface-2:#EFF5F1; --glass:rgba(255,255,255,.74);

@@ -1,4 +1,4 @@
-# MaPi – Malin Public Health
+# MaPH – Malin Public Health
 
 Private Lernkarten-App zur Klausurvorbereitung: Startseite, Themen-Zusammenfassungen,
 Lernkarten (auch eigene) und Quiz. Eine einzige Datei (`index.html`), keine Server, keine

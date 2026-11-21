@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// MaPi – baut index.html aus src/ und verschlüsselt die Lerninhalte mit dem Passwort.
+// MaPH – baut index.html aus src/ und verschlüsselt die Lerninhalte mit dem Passwort.
 //
 //   MAPI_PASSWORD='…' node tools/build.mjs build   --content inhalt.json
 //   MAPI_PASSWORD='…' node tools/build.mjs decrypt --out inhalt.json
