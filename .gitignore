@@ -1,0 +1,7 @@
+# Unverschlüsselte Lerninhalte und die Studienhefte gehören nicht ins Repository.
+inhalt*.json
+content*.json
+*.pdf
+*.zip
+.DS_Store
+node_modules/
